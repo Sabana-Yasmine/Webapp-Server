@@ -4,12 +4,14 @@ const app = express();
 const cors =require("cors");
 const database = require("./database/db")
 const userRouter =require("./UserManagement/userRouter")
+const adminRouter =require("./AdminManagement/AdminRoute")
+
 
 //Middilewares
 app.use(express.json())
 app.use(cors());
 app.use("/user",userRouter)
-
+app.use("/admin",adminRouter)
 
 
 //Server creation
