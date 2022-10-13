@@ -12,7 +12,9 @@ const userSchema = new mongoose.Schema({
     lastName     : {type : String,  required : false },
     phoneNumber  : {type : Number,  required : false },
     email        : {type : String,  required : false },
-    password     : {type : String,  required : false }
+    password     : {type : String,  required : false },
+    resetPassToken    : {type : String},
+    resetPassExpires  : {type : Date}
     
 },{
     timeStamps : true
