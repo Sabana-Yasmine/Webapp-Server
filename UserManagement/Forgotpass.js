@@ -7,28 +7,30 @@ const router = require("express").Router();
 require('dotenv').config();
 const nodemailer = require('nodemailer');
 
+
 //SEND RESET PASSWORD LINK TO MAIL
 
-  router.post('/forgotPassword', async (req, res) => {
+  router.post('/forgotPassword',  (req, res) => {
+    console.log("forgotPassword")
     if (req.body.email === '') {
       res.status(400).send('email required');
       console.log("email required");
     }
     console.error(req.body.email);
-    await User.findOne({
-      where: {
-        email: req.body.email,
-      },
-    }).then((user) => {
-      if (user === null) {
+     User.findOne({ email: req.body.email }).then((user) => {
+    if (user === null) {
         console.error('email not in database');
         res.status(403).send('email not in db');
       } else {
+
+//GENERATE TOKEN
         const userToken = crypto.randomBytes(20).toString('hex');
      user.update({
           resetPassToken: userToken,
-          resetPassExpires: Date.now() + 3600000,
+        
         });
+
+//CREATING NODEMAILER TRANSPORT
 
         const transporter = nodemailer.createTransport({
           service: 'gmail',
@@ -42,11 +44,7 @@ const nodemailer = require('nodemailer');
           from: 'sabana.pltosys@gmail.com',
           to: `${user.email}`,
           subject: 'Link To Reset Password',
-          text:
-            
-            + 'Please click on the following link to complete the process within one hour of receiving it:\n\n'
-            + `http://localhost:3031/reset/${userToken}\n\n`
-            + 'If you did not request this, please ignore this email and your password will remain unchanged.\n',
+          text:`http://localhost:2020/password/reset/${userToken}`            
         };
 
         console.log('sending mail');
@@ -66,17 +64,10 @@ const nodemailer = require('nodemailer');
   //RESET PASSWORD
 
   router.get('/reset', async (req, res) => {
-     await User.findOne({
-      where: {
-        resetPassToken: req.query.resetPassToken,
-        resetPassExpires: {
-          [Op.gt]: Date.now(),
-        },
-      },
-    }).then((user) => {
+     await User.findOne({resetPassToken: req.query.resetPassToken}).then((user) => {
       if (user == null) {
-        console.error('password reset link is invalid or has expired');
-        res.status(403).send('password reset link is invalid or has expired');
+        console.error('password reset link is invalid');
+        res.status(403).send('password reset link is invalid');
       } else {
         res.status(200).send({
           email: user.email,
@@ -91,15 +82,10 @@ const nodemailer = require('nodemailer');
   const salt = 12;
   
   router.put('/updatePassword', async (req, res) => {
-    await User.findOne({
-      where: {
-        email: req.body.email,
-        resetPassToken: req.body.resetPassToken,
-        resetPassExpires: {
-          [Op.gt]: Date.now(),
-        },
-      },
-    }).then(user => {
+    await User.findOne({ 
+      email: req.body.email,
+      resetPassToken: req.body.resetPassToken})
+      .then(user => {
       if (user == null) {
         console.error('password reset link is invalid or has expired');
         res.status(403).send('password reset link is invalid or has expired');
@@ -111,7 +97,6 @@ const nodemailer = require('nodemailer');
             user.update({
               password: hashedPassword,
               resetPassToken: null,
-              resetPassExpires: null,
             });
           })
           .then(() => {
